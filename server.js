@@ -17,7 +17,7 @@ mongoose.Promise = Promise
 const User = mongoose.model('User', {
   name: {
     type: String,
-    minlength: 2,
+    minlength: [2, "Min length 2 characters"],
     maxlength: 40,
     required: [true, "Name is required"]
   },
@@ -28,25 +28,26 @@ const User = mongoose.model('User', {
   },
   password: {
     type: String,
-    minlength: 8,
+    minlength: [8, "Min length 8 characters"],
     required: [true, "Password is required"]
   },
   adverts: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Advert'
   }],
-  /*   favourites: {
-      type: [],
-    }, */
-  /*   rating: {
-      type: Number,
-      default: 0
-    }, */
   accessToken: {
     type: String,
     default: () => crypto.randomBytes(128).toString('hex')
   }
 })
+
+/*   favourites: {
+      type: [],
+    }, */
+/*   rating: {
+    type: Number,
+    default: 0
+  }, */
 
 const Advert = mongoose.model('Advert', {
   title: {
@@ -113,6 +114,22 @@ app.use(bodyParser.json())
 // Start defining your routes here
 app.get('/', (req, res) => {
   res.send('Hello world')
+})
+
+app.post('/users', async (req, res) => {
+  const { name, email, password } = req.body
+  try {
+    const user = await new User({ name, email, password })
+    user.save((err, user) => {
+      if (user) {
+        res.status(201).json({ message: 'Created user', user })
+      } else {
+        res.status(400).json({ message: 'Could not create user', errors: err.errors })
+      }
+    })
+  } catch (err) {
+    res.status(400).json({ message: 'Could not create user', errors: err.errors })
+  }
 })
 
 app.post('/adverts', async (req, res) => {
