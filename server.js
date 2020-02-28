@@ -133,9 +133,11 @@ app.post('/users', async (req, res) => {
 })
 
 app.post('/adverts', async (req, res) => {
-  const { title, description, imageUrl, price, delivery } = req.body
+  const { title, description, imageUrl, price, delivery, seller } = req.body
+  const sellerId = await User.findOne({ _id: seller })
+
   try {
-    const advert = await new Advert({ title, description, imageUrl, price, delivery })
+    const advert = await new Advert({ title, description, imageUrl, price, delivery, seller: sellerId })
     advert.save((err, advert) => {
       if (advert) {
         res.status(201).json({ message: 'Created add', advert })
