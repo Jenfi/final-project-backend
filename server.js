@@ -31,9 +31,9 @@ const User = mongoose.model('User', {
     minlength: 8,
     required: [true, "Password is required"]
   },
-  adds: [{
+  adverts: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Product'
+    ref: 'Advert'
   }],
   /*   favourites: {
       type: [],
@@ -48,7 +48,7 @@ const User = mongoose.model('User', {
   }
 })
 
-const Product = mongoose.model('Product', {
+const Advert = mongoose.model('Advert', {
   title: {
     type: String,
     required: [true, "Adds must have a title"],
@@ -115,9 +115,22 @@ app.get('/', (req, res) => {
   res.send('Hello world')
 })
 
-app.post('/adds', (req, res) => {
-
+app.post('/adverts', async (req, res) => {
+  const { title, description, imageUrl, price, delivery } = req.body
+  try {
+    const advert = await new Advert({ title, description, imageUrl, price, delivery })
+    advert.save((err, advert) => {
+      if (advert) {
+        res.status(201).json({ message: 'Created add', advert })
+      } else {
+        res.status(400).json({ message: 'Could not create add', errors: err.errors })
+      }
+    })
+  } catch (err) {
+    res.status(400).json({ message: 'Could not create add', errors: err.errors })
+  }
 })
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`)
