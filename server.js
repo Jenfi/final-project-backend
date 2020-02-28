@@ -119,10 +119,10 @@ app.get('/', (req, res) => {
 app.post('/users', async (req, res) => {
   const { name, email, password } = req.body
   try {
-    const user = await new User({ name, email, password })
+    const user = await new User({ name, email, password: bcrypt.hashSync(password) })
     user.save((err, user) => {
       if (user) {
-        res.status(201).json({ message: 'Created user', user })
+        res.status(201).json({ message: 'Created user', user: user._id, accessToken: user.accessToken })
       } else {
         res.status(400).json({ message: 'Could not create user', errors: err.errors })
       }
