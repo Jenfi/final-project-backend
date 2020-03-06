@@ -155,6 +155,16 @@ app.post('/users', async (req, res) => {
   }
 })
 
+app.get('/adverts', async (req, res) => {
+
+  try {
+    const adverts = await Advert.find()
+    res.status(200).json(adverts)
+  } catch (err) {
+    res.status(400).json({ message: 'Could not get', errors: err.errors })
+  }
+})
+
 app.post('/adverts', parser.single('image'), async (req, res) => {
   const { title, description, price, delivery, category, condition, seller } = req.body
   const imageUrl = req.file.secure_url
