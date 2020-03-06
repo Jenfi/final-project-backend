@@ -4,6 +4,12 @@ import cors from 'cors'
 import mongoose, { model } from 'mongoose'
 import crypto from 'crypto'
 import bcrypt from 'bcrypt-nodejs'
+import dotenv from 'dotenv'
+import cloudinary from 'cloudinary'
+import multer from 'multer'
+import cloudinaryStorage from 'multer-storage-cloudinary'
+
+dotenv.config()
 
 //   PORT=9000 npm start
 const port = process.env.PORT || 8080
@@ -12,6 +18,21 @@ const app = express()
 const mongoUrl = process.env.MONGO_URL || "mongodb://localhost/haggle"
 mongoose.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false })
 mongoose.Promise = Promise
+
+cloudinary.config({
+  cloud_name: 'dja4i0ann',
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+})
+
+const storage = cloudinaryStorage({
+  cloudinary,
+  folder: 'ads',
+  allowedFormats: ['jpg', 'jpeg', 'png'],
+  transformation: [{ width: 600, height: 400, crop: "limit" }]
+})
+
+const parser = multer({ storage })
 
 // Check validation for email https://stackoverflow.com/questions/18022365/mongoose-validate-email-syntax
 const User = mongoose.model('User', {
@@ -85,6 +106,10 @@ const Advert = mongoose.model('Advert', {
     type: String,
     required: [true, "Adds must have an image"]
   },
+  imageId: {
+    type: String,
+    required: true
+  },
   condition: {
     type: String,
     required: [true, "Specify the product's condition"]
@@ -130,13 +155,15 @@ app.post('/users', async (req, res) => {
   }
 })
 
-app.post('/adverts', async (req, res) => {
-  const { title, description, imageUrl, price, delivery, category, condition, seller } = req.body
+app.post('/adverts', parser.single('image'), async (req, res) => {
+  const { title, description, price, delivery, category, condition, seller } = req.body
+  const imageUrl = req.file.secure_url
+  const imageId = req.file.public_id
   const sellerId = await User.findOne({ _id: seller })
 
   try {
     const advert = await new Advert({
-      title, description, imageUrl, price, delivery, category, condition, seller: sellerId
+      title, description, imageUrl, imageId, price, delivery, category, condition, seller: sellerId
     })
     advert.save((err, advert) => {
       if (advert) {
