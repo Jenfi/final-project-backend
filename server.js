@@ -10,7 +10,7 @@ const port = process.env.PORT || 8080
 const app = express()
 
 const mongoUrl = process.env.MONGO_URL || "mongodb://localhost/haggle"
-mongoose.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false })
 mongoose.Promise = Promise
 
 // Check validation for email https://stackoverflow.com/questions/18022365/mongoose-validate-email-syntax
@@ -53,7 +53,7 @@ const Advert = mongoose.model('Advert', {
   title: {
     type: String,
     required: [true, "Adds must have a title"],
-    minlength: 5,
+    minlength: 4,
     maxlength: 50
   },
   description: {
@@ -86,23 +86,21 @@ const Advert = mongoose.model('Advert', {
     required: [true, "Adds must have an image"]
   },
   condition: {
-    type: Array,
-    default: ["As new", "Good", "Used", "Needs alterations"],
+    type: String,
     required: [true, "Specify the product's condition"]
   },
   delivery: {
     type: Array,
-    default: ["Pick up", "Meet up", "Ship"],
     required: [true, "Specify how the product can be delivered"]
   },
   category: {
-    type: Array,
-    default: ["Textiles", "Lightning", "Decoration", "Rugs", "Furniture"],
+    type: String,
     required: [true, "Specify category"]
   },
   seller: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    required: true
   }
 })
 
@@ -133,11 +131,13 @@ app.post('/users', async (req, res) => {
 })
 
 app.post('/adverts', async (req, res) => {
-  const { title, description, imageUrl, price, delivery, seller } = req.body
+  const { title, description, imageUrl, price, delivery, category, condition, seller } = req.body
   const sellerId = await User.findOne({ _id: seller })
 
   try {
-    const advert = await new Advert({ title, description, imageUrl, price, delivery, seller: sellerId })
+    const advert = await new Advert({
+      title, description, imageUrl, price, delivery, category, condition, seller: sellerId
+    })
     advert.save((err, advert) => {
       if (advert) {
         res.status(201).json({ message: 'Created add', advert })
@@ -145,6 +145,7 @@ app.post('/adverts', async (req, res) => {
         res.status(400).json({ message: 'Could not create add', errors: err.errors })
       }
     })
+    await User.findOneAndUpdate({ _id: seller }, { $push: { adverts: advert } })
   } catch (err) {
     res.status(400).json({ message: 'Could not create add', errors: err.errors })
   }
