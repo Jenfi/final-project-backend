@@ -165,6 +165,16 @@ app.get('/adverts', async (req, res) => {
   }
 })
 
+app.get('/adverts/:advertId', async (req, res) => {
+  const { advertId } = req.params
+  try {
+    const advert = await Advert.findOne({ _id: advertId })
+    res.status(200).json(advert)
+  } catch (err) {
+    res.status(400).json({ message: 'Could not get', errors: err.errors })
+  }
+})
+
 app.post('/adverts', parser.single('image'), async (req, res) => {
   const { title, description, price, delivery, category, condition, seller } = req.body
   const imageUrl = req.file.secure_url
