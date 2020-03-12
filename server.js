@@ -134,24 +134,44 @@ const Advert = mongoose.model('Advert', {
 app.use(cors())
 app.use(bodyParser.json())
 
-// Start defining your routes here
-app.get('/', (req, res) => {
-  res.send('Hello world')
-})
-
+// Routes
 app.post('/users', async (req, res) => {
   const { name, email, password } = req.body
+  const encryptedPassword = password.length >= 8 ? bcrypt.hashSync(password) : password
+
   try {
-    const user = await new User({ name, email, password: bcrypt.hashSync(password) })
+    const user = await new User({ name, email, password: encryptedPassword })
     user.save((err, user) => {
       if (user) {
-        res.status(201).json({ message: 'Created user', user: user._id, accessToken: user.accessToken })
+        res.status(201).json({ message: 'Created user', userId: user._id, accessToken: user.accessToken })
       } else {
-        res.status(400).json({ message: 'Could not create user', errors: err.errors })
+        err.code === 11000
+          ? res.status(400).json({ message: 'User already exists' })
+          : res.status(400).json({ error: err })
       }
     })
   } catch (err) {
-    res.status(400).json({ message: 'Could not create user', errors: err.errors })
+    res.status(400).json({ message: 'Could not create user 2', errors: err.errors })
+  }
+})
+
+const authenticateUser = async (req, res, next) => {
+  const user = await User.findOne({ accessToken: req.header('Authorization') })
+  if (user) {
+    req.user = user
+    next()
+  } else {
+    res.status(401).json({ authorized: false, message: "User not authorized" })
+  }
+}
+
+app.post('/sessions', async (req, res) => {
+  const { email, password } = req.body
+  const user = await User.findOne({ email: email })
+  if (user && bcrypt.compareSync(password, user.password)) {
+    res.json({ userId: user._id, accessToken: user.accessToken })
+  } else {
+    res.status(404).json({ notFound: true })
   }
 })
 
@@ -175,6 +195,7 @@ app.get('/adverts/:advertId', async (req, res) => {
   }
 })
 
+app.post('/adverts', authenticateUser)
 app.post('/adverts', parser.single('image'), async (req, res) => {
   const { title, description, price, delivery, category, condition, seller } = req.body
   const imageUrl = req.file.secure_url
