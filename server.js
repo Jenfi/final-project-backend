@@ -197,10 +197,11 @@ app.get('/adverts/:advertId', async (req, res) => {
 
 app.post('/adverts', authenticateUser)
 app.post('/adverts', parser.single('image'), async (req, res) => {
-  const { title, description, price, delivery, category, condition, seller } = req.body
+  const { title, description, price, delivery, category, condition } = req.body
+  const user = req.user._id
   const imageUrl = req.file.secure_url
   const imageId = req.file.public_id
-  const sellerId = await User.findOne({ _id: seller })
+  const sellerId = await User.findOne({ _id: user })
 
   try {
     const advert = await new Advert({
@@ -208,12 +209,12 @@ app.post('/adverts', parser.single('image'), async (req, res) => {
     })
     advert.save((err, advert) => {
       if (advert) {
-        res.status(201).json({ message: 'Created add', advert })
+        res.status(201).json({ message: 'Created add', adId: advert._id })
       } else {
         res.status(400).json({ message: 'Could not create add', errors: err.errors })
       }
     })
-    await User.findOneAndUpdate({ _id: seller }, { $push: { adverts: advert } })
+    await User.findOneAndUpdate({ _id: sellerId }, { $push: { adverts: advert._id } })
   } catch (err) {
     res.status(400).json({ message: 'Could not create add', errors: err.errors })
   }
