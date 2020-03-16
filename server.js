@@ -209,9 +209,9 @@ app.post('/adverts', parser.single('image'), async (req, res) => {
     })
     advert.save((err, advert) => {
       if (advert) {
-        res.status(201).json({ message: 'Created add', adId: advert._id })
+        res.status(201).json({ message: 'Created add', adId: advert._id, created: true })
       } else {
-        res.status(400).json({ message: 'Could not create add', errors: err.errors })
+        res.status(400).json({ message: 'Could not create add', errors: err.errors, created: false })
       }
     })
     await User.findOneAndUpdate({ _id: sellerId }, { $push: { adverts: advert._id } })
