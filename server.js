@@ -62,14 +62,6 @@ const User = mongoose.model('User', {
   }
 })
 
-/*   favourites: {
-      type: [],
-    }, */
-/*   rating: {
-    type: Number,
-    default: 0
-  }, */
-
 const Advert = mongoose.model('Advert', {
   title: {
     type: String,
@@ -134,6 +126,17 @@ const Advert = mongoose.model('Advert', {
 app.use(cors())
 app.use(bodyParser.json())
 
+const authenticateUser = async (req, res, next) => {
+  const user = await User.findOne({ accessToken: req.header('Authorization') })
+  if (user) {
+    req.user = user
+    next()
+  } else {
+    res.status(401).json({ authorized: false, message: "User not authorized" })
+  }
+}
+
+
 // Routes
 app.post('/users', async (req, res) => {
   const { name, email, password } = req.body
@@ -155,15 +158,25 @@ app.post('/users', async (req, res) => {
   }
 })
 
-const authenticateUser = async (req, res, next) => {
-  const user = await User.findOne({ accessToken: req.header('Authorization') })
-  if (user) {
-    req.user = user
-    next()
+app.get('/users/:userId/profile', authenticateUser)
+app.get('/users/:userId/profile', async (req, res) => {
+  const { userId } = req.params
+  const stringifiedAuthId = JSON.stringify(req.user._id)
+  const authId = stringifiedAuthId.replace(/"/g, '')
+
+  if (userId == authId) {
+    try {
+      const user = await User.findOne({ _id: userId })
+      res.status(200).json({ name: user.name, email: user.email })
+    } catch (err) {
+      res.status(403).json({ authorized: false, message: "User not authorized", errors: err.errors })
+    }
   } else {
-    res.status(401).json({ authorized: false, message: "User not authorized" })
+    res.status(400).json({ authorized: false, message: "Users don't match" })
   }
-}
+})
+
+
 
 app.post('/sessions', async (req, res) => {
   const { email, password } = req.body
@@ -174,6 +187,7 @@ app.post('/sessions', async (req, res) => {
     res.status(404).json({ notFound: true })
   }
 })
+
 
 app.get('/adverts', async (req, res) => {
 
