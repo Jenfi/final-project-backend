@@ -162,7 +162,8 @@ app.get('/users/current', authenticateUser)
 app.get('/users/current', async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user._id })
-    res.status(200).json({ name: user.name, email: user.email })
+    const adverts = await Advert.find({ seller: req.user._id })
+    res.status(200).json({ name: user.name, email: user.email, adverts: adverts })
   } catch (err) {
     res.status(403).json({ authorized: false, message: "User not authorized", errors: err.errors })
   }
