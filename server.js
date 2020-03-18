@@ -158,21 +158,13 @@ app.post('/users', async (req, res) => {
   }
 })
 
-app.get('/users/:userId/profile', authenticateUser)
-app.get('/users/:userId/profile', async (req, res) => {
-  const { userId } = req.params
-  const stringifiedAuthId = JSON.stringify(req.user._id)
-  const authId = stringifiedAuthId.replace(/"/g, '')
-
-  if (userId == authId) {
-    try {
-      const user = await User.findOne({ _id: userId })
-      res.status(200).json({ name: user.name, email: user.email })
-    } catch (err) {
-      res.status(403).json({ authorized: false, message: "User not authorized", errors: err.errors })
-    }
-  } else {
-    res.status(400).json({ authorized: false, message: "Users don't match" })
+app.get('/users/current', authenticateUser)
+app.get('/users/current', async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.user._id })
+    res.status(200).json({ name: user.name, email: user.email })
+  } catch (err) {
+    res.status(403).json({ authorized: false, message: "User not authorized", errors: err.errors })
   }
 })
 
