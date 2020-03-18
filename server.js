@@ -196,7 +196,8 @@ app.get('/adverts/:advertId', async (req, res) => {
   const { advertId } = req.params
   try {
     const advert = await Advert.findOne({ _id: advertId })
-    res.status(200).json(advert)
+    const seller = await User.findOne({ _id: advert.seller })
+    res.status(200).json({ product: advert, seller: { name: seller.name, email: seller.email } })
   } catch (err) {
     res.status(400).json({ message: 'Could not get', errors: err.errors })
   }
