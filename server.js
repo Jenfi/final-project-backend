@@ -174,7 +174,7 @@ app.post('/sessions', async (req, res) => {
   const { email, password } = req.body
   const user = await User.findOne({ email: email })
   if (user && bcrypt.compareSync(password, user.password)) {
-    res.json({ userId: user._id, accessToken: user.accessToken })
+    res.json({ name: user.name, accessToken: user.accessToken })
   } else {
     res.status(404).json({ notFound: true })
   }
@@ -182,9 +182,18 @@ app.post('/sessions', async (req, res) => {
 
 
 app.get('/adverts', async (req, res) => {
+  const limit = parseInt(req.query.limit)
+
+  const limitSize = () => {
+    if (limit > 0 && limit <= 50) {
+      return limit
+    } else {
+      return 20
+    }
+  }
 
   try {
-    const adverts = await Advert.find()
+    const adverts = await Advert.find().sort({ publishedDate: 'desc' }).limit(limitSize()).exec()
     res.status(200).json(adverts)
   } catch (err) {
     res.status(400).json({ message: 'Could not get', errors: err.errors })
