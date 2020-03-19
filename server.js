@@ -71,8 +71,8 @@ const Advert = mongoose.model('Advert', {
   },
   description: {
     type: String,
-    minlength: 4,
-    maxlength: 400,
+    minlength: 3,
+    maxlength: 600,
     required: [true, "Adds must have a description."]
   },
   publishedDate: {
@@ -87,7 +87,6 @@ const Advert = mongoose.model('Advert', {
   price: {
     type: Number,
     min: 1,
-    max: 10000,
     required: true
   },
   currency: {
