@@ -140,13 +140,13 @@ const authenticateUser = async (req, res, next) => {
 // Routes
 app.post('/users', async (req, res) => {
   const { name, email, password } = req.body
-  const encryptedPassword = password.length >= 8 ? bcrypt.hashSync(password) : password
+  const encryptedPassword = password.length >= 8 ? bcrypt.hashSync(password) : null
 
   try {
     const user = await new User({ name, email, password: encryptedPassword })
     user.save((err, user) => {
       if (user) {
-        res.status(201).json({ message: 'Created user', userId: user._id, accessToken: user.accessToken })
+        res.status(201).json({ message: 'Created user', accessToken: user.accessToken })
       } else {
         err.code === 11000
           ? res.status(400).json({ message: 'User already exists' })
