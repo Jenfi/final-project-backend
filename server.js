@@ -236,6 +236,21 @@ app.post('/adverts', parser.single('image'), async (req, res) => {
   }
 })
 
+app.put('/adverts/:advertId/sold', async (req, res) => {
+  const { advertId } = req.params
+  try {
+    const advert = await Advert.findByIdAndUpdate(advertId, { $set: { sold: true } }, { new: true })
+    advert.save()
+    res.status(201).json({ advert: advert.title, sold: advert.sold })
+  } catch (err) {
+    if (err.kind === "ObjectId") {
+      res.status(400).json({ message: "Could not mark ad as sold", error: "There is no avdert with that id." })
+    } else {
+      res.status(400).json({ error: err.errors })
+    }
+  }
+})
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`)
